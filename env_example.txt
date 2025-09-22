@@ -1,0 +1,21 @@
+# Discord Bot Configuration
+DISCORD_TOKEN=your_discord_bot_token_here
+GUILD_ID=your_guild_id_here
+
+# GitHub Configuration
+GITHUB_TOKEN=your_github_token_here
+GITHUB_REPO=owner/repository_name
+GITHUB_BRANCH=main
+
+# Roblox Configuration
+ROBLOX_COOKIE=your_roblox_cookie_here
+PLACE_ID=your_place_id_here
+UNIVERSE_ID=your_universe_id_here
+
+# File Paths
+TEMP_DIR=./temp
+LUNE_SCRIPT_PATH=./lune_sync.luau
+
+# Permissions (comma-separated IDs)
+ALLOWED_ROLES=role_id_1,role_id_2
+ALLOWED_USERS=user_id_1,user_id_2
