@@ -144,8 +144,8 @@ if __name__ == "__main__":
         logger.error("GITHUB_TOKEN not found in environment variables")
         exit(1)
     
-    if not Config.ROBLOX_COOKIE:
-        logger.error("ROBLOX_COOKIE not found in environment variables")
+    if not Config.ROBLOX_API_KEY:
+        logger.error("ROBLOX_API_KEY not found in environment variables")
         exit(1)
     
     os.makedirs(Config.TEMP_DIR, exist_ok=True)
