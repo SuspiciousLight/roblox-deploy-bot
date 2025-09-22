@@ -51,30 +51,25 @@ class GitHubClient:
         os.makedirs(extract_to, exist_ok=True)
         
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            # Find the root directory (GitHub adds a timestamp suffix)
             members = zip_ref.namelist()
             root_dir = members[0] if members else ""
             
-            # Extract only data files (you can customize this pattern)
             data_patterns = ['*.json', '*.lua', '*.luau', '*.txt', '*.csv']
             
             for member in members:
                 if any(member.endswith(pattern.replace('*', '')) for pattern in data_patterns):
-                    # Remove the root directory prefix
                     relative_path = member[len(root_dir):] if member.startswith(root_dir) else member
-                    if relative_path:  # Skip if it's just the root directory
+                    if relative_path: 
                         zip_ref.extract(member, extract_to)
-                        # Rename to remove the root directory prefix
                         old_path = os.path.join(extract_to, member)
                         new_path = os.path.join(extract_to, relative_path)
                         if old_path != new_path:
                             os.makedirs(os.path.dirname(new_path), exist_ok=True)
                             os.rename(old_path, new_path)
-                            # Remove the old directory structure if empty
                             try:
                                 os.rmdir(os.path.dirname(old_path))
                             except OSError:
-                                pass  # Directory not empty, that's fine
+                                pass 
     
     async def get_file_contents(self, file_path):
         """Get the contents of a specific file from the repository"""
