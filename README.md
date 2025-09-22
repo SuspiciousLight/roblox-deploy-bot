@@ -4,9 +4,9 @@ A Discord bot that automates syncing GitHub changes to your Roblox game. This bo
 
 ## Features
 
-- 🤖 Discord slash command (`/sync')
-- 🔄 Automatic GitHub repository syncing (with support for the branch parameter)
-- 🎮 Download/publish Roblox place via rokit
+- 🤖 Discord slash command (`/sync`)
+- 🔄 Automatic GitHub repository syncing (with optional branch parameter)
+- 🎮 Download/publish Roblox place via rbxcloud (Open Cloud)
 - 📊 Sync data files via Lune
 - 🔐 Role-based permissions (optional)
 - 📝 Step-by-step messaging and logging
@@ -14,11 +14,11 @@ A Discord bot that automates syncing GitHub changes to your Roblox game. This bo
 ## Prerequisites
 
 - Python 3.8+
-- Rust (Cargo) — to install Lune/rokit
+- Rust (Cargo) — to install CLI tools
 - Discord Bot Token
 - GitHub Personal Access Token
-- Roblox cookie (`.ROBLOSECURITY`) and publishing rights
-- Roblox Place ID и Universe ID
+- Roblox Open Cloud API Key
+- Roblox Place ID and Universe ID
 
 ## Installation
 
@@ -50,9 +50,9 @@ A Discord bot that automates syncing GitHub changes to your Roblox game. This bo
    - Copy the token to your `.env` file
 
 6. **Install CLI tools:**
-   - Install rokit: `cargo install rokit`
+   - Install rbxcloud: `cargo install rbxcloud`
    - Install Lune: `cargo install lune`
-   - Restart the terminal and make sure that both utilities are in the PATH
+   - Restart the terminal and make sure both are in PATH
 
 ## Configuration
 
@@ -68,8 +68,8 @@ GITHUB_TOKEN=your_github_token_here
 GITHUB_REPO=owner/repository_name
 GITHUB_BRANCH=main
 
-# Roblox Configuration
-ROBLOX_COOKIE=your_roblox_cookie_here
+# Roblox (Open Cloud)
+ROBLOX_API_KEY=your_open_cloud_key
 PLACE_ID=your_place_id_here
 UNIVERSE_ID=your_universe_id_here
 
@@ -91,8 +91,8 @@ ALLOWED_USERS=user_id_1,user_id_2
    ```
 
 2. **Use Discord commands:**
-   - `/sync` — synchronize changes from the default branch (`GITHUB_BRANCH')
-   - `/sync branch:<name>` — synchronize the specified branch
+   - `/sync` — deploy the default branch (`GITHUB_BRANCH`)
+   - `/sync branch:<name>` — deploy a specific branch
 
 ## Restart & Testing
 
@@ -118,9 +118,9 @@ Syncs the latest changes from your GitHub repository to Roblox:
 1. Fetches latest commit from GitHub
 2. Downloads the repository
 3. Extracts data files
-4. Downloads current place file from Roblox using rokit
+4. Downloads current place file from Roblox using rbxcloud
 5. Syncs data files using Lune
-6. Publishes the updated place to Roblox using rokit
+6. Publishes the updated place to Roblox using rbxcloud
 
 ## File Structure
 
@@ -129,7 +129,7 @@ roblox-deploy-bot/
 ├── main.py                 # Main entry point
 ├── discord_bot.py          # Discord bot implementation
 ├── github_client.py        # GitHub API client
-├── roblox_client.py        # Roblox operations client (using rokit)
+├── roblox_client.py        # Roblox operations client (using rbxcloud)
 ├── config.py              # Configuration management
 ├── lune_sync.luau         # Lune script for data syncing
 ├── setup.py               # Setup script
@@ -159,9 +159,9 @@ ALLOWED_ROLES=discord_role_id_1
 
 2. **"Failed to download place file"**
 
-   - Make sure that `rokit` is installed in the PATH as well
-   - Check the Place ID
-   - The account by `ROBLOX_COOKIE` has access to the place
+   - Ensure `rbxcloud` is installed and in PATH
+   - Check Place ID and Universe ID
+   - Ensure the Open Cloud key has the required permissions
 
 3. **"Failed to sync data files"**
 
@@ -170,9 +170,9 @@ ALLOWED_ROLES=discord_role_id_1
    - Verify your data files are in the correct format
 
 4. **"Failed to publish place"**
-   - Make sure that `rokit` is installed in the PATH as well
-   - Check the publishing rights of the account (cookie)
-   - Check the Place ID and Universe ID
+   - Ensure `rbxcloud` is in PATH
+   - Confirm the Open Cloud key has publish rights for the place
+   - Verify Place ID and Universe ID
 
 ### Logs
 
@@ -180,7 +180,7 @@ Check the `bot.log` file for detailed error messages and debugging information.
 
 ## Dependencies
 
-- **rokit**: Roblox place download/upload
+- **rbxcloud**: Place download/upload via Open Cloud
 - **Lune**: Data file synchronization
 - **discord.py**: For Discord bot functionality
 - **aiohttp**: For async HTTP requests
