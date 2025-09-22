@@ -90,27 +90,34 @@ async def sync_command_handler(interaction: discord.Interaction, branch: Optiona
         return
     
     await interaction.response.defer()
-    
+    status_msg = await interaction.followup.send("🔄 Starting sync...", wait=True)
+
+    async def update_status(text: str):
+        try:
+            await status_msg.edit(content=text)
+        except Exception:
+            pass
+
     try:
-        await interaction.followup.send(f"🔄 Fetching latest changes from GitHub... (branch: {branch or bot.github_client.branch})")
+        await update_status(f"🔄 Fetching latest changes from GitHub... (branch: {branch or bot.github_client.branch})")
         commit_info = await bot.github_client.get_latest_commit(branch)
         commit_sha = commit_info['sha'][:7]
         commit_message = commit_info['commit']['message']
         
-        await interaction.followup.send("📥 Downloading repository...")
+        await update_status("📥 Downloading repository...")
         zip_path = os.path.join(Config.TEMP_DIR, 'repo.zip')
         await bot.github_client.download_repository(zip_path, branch)
         
-        await interaction.followup.send("📂 Extracting data files...")
+        await update_status("📂 Extracting data files...")
         await bot.github_client.extract_data_files(zip_path, Config.DATA_FILES_DIR)
         
-        await interaction.followup.send("🎮 Downloading current place file...")
+        await update_status("🎮 Downloading current place file...")
         await bot.roblox_client.download_place_file()
         
-        await interaction.followup.send("🔄 Syncing data files with Lune...")
+        await update_status("🔄 Syncing data files with Lune...")
         await bot.roblox_client.sync_data_files()
         
-        await interaction.followup.send("🚀 Publishing to Roblox...")
+        await update_status("🚀 Publishing to Roblox...")
         await bot.roblox_client.publish_place()
         
         embed = discord.Embed(
@@ -119,8 +126,7 @@ async def sync_command_handler(interaction: discord.Interaction, branch: Optiona
             description=f"**Commit:** `{commit_sha}`\n**Message:** {commit_message}"
         )
         embed.add_field(name="Steps Completed", value="• Fetched latest changes\n• Downloaded repository\n• Extracted data files\n• Downloaded place file\n• Synced with Lune\n• Published to Roblox", inline=False)
-        
-        await interaction.followup.send(embed=embed)
+        await status_msg.edit(content=None, embed=embed)
         
         bot.roblox_client.cleanup_temp_files()
         
@@ -131,7 +137,10 @@ async def sync_command_handler(interaction: discord.Interaction, branch: Optiona
             color=0xff0000,
             description=f"An error occurred during sync: {str(e)}"
         )
-        await interaction.followup.send(embed=embed)
+        try:
+            await status_msg.edit(content=None, embed=embed)
+        except Exception:
+            await interaction.followup.send(embed=embed)
         
         bot.roblox_client.cleanup_temp_files()
 
