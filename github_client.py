@@ -39,6 +39,9 @@ class GitHubClient:
             url = f"{self.base_url}/zipball/{branch_to_use}"
             async with session.get(url, headers=self.headers) as response:
                 if response.status == 200:
+                    output_dir = os.path.dirname(output_path)
+                    if output_dir:
+                        os.makedirs(output_dir, exist_ok=True)
                     with open(output_path, 'wb') as f:
                         async for chunk in response.content.iter_chunked(8192):
                             f.write(chunk)
