@@ -11,7 +11,7 @@ class Config:
     GITHUB_REPO = os.getenv('GITHUB_REPO') 
     GITHUB_BRANCH = os.getenv('GITHUB_BRANCH', 'main')
     
-    ROBLOX_COOKIE = os.getenv('ROBLOX_COOKIE')
+    ROBLOX_API_KEY = os.getenv('ROBLOX_API_KEY')
     PLACE_ID = int(os.getenv('PLACE_ID', 0))
     UNIVERSE_ID = int(os.getenv('UNIVERSE_ID', 0))
     
