@@ -6,7 +6,7 @@ from config import Config
 
 class RobloxClient:
     def __init__(self):
-        self.cookie = Config.ROBLOX_COOKIE
+        self.api_key = Config.ROBLOX_API_KEY
         self.place_id = Config.PLACE_ID
         self.universe_id = Config.UNIVERSE_ID
         self.temp_dir = Config.TEMP_DIR
@@ -15,22 +15,24 @@ class RobloxClient:
         self.lune_script_path = Config.LUNE_SCRIPT_PATH
     
     async def download_place_file(self):
-        """Download the latest place file from Roblox using Open Cloud API"""
+        """Download the latest place file using rbxcloud (Open Cloud API)."""
         os.makedirs(self.temp_dir, exist_ok=True)
-        
+        if not self.api_key:
+            raise Exception("ROBLOX_API_KEY is missing")
         try:
             cmd = [
-                "rokit", "download", 
+                "rbxcloud", "place", "download",
                 "--place-id", str(self.place_id),
+                "--universe-id", str(self.universe_id),
+                "--api-key", self.api_key,
                 "--output", self.place_file_path
             ]
-            
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            subprocess.run(cmd, capture_output=True, text=True, check=True)
             return True
         except subprocess.CalledProcessError as e:
-            raise Exception(f"Failed to download place file: {e.stderr}")
+            raise Exception(f"Failed to download place file: {e.stderr or e.stdout}")
         except FileNotFoundError:
-            raise Exception("rokit not found. Please install rokit: cargo install rokit")
+            raise Exception("rbxcloud not found. Please install: cargo install rbxcloud")
     
     async def sync_data_files(self):
         """Use Lune to sync data files into the place file"""
@@ -53,23 +55,25 @@ class RobloxClient:
             raise Exception(f"Failed to sync data files: {e.stderr}")
     
     async def publish_place(self):
-        """Publish the updated place file to Roblox using rokit"""
+        """Publish the updated place to Roblox using rbxcloud."""
         if not os.path.exists(self.place_file_path):
             raise Exception("Place file not found")
-        
+        if not self.api_key:
+            raise Exception("ROBLOX_API_KEY is missing")
         try:
             cmd = [
-                "rokit", "publish",
+                "rbxcloud", "place", "upload",
+                "--universe-id", str(self.universe_id),
                 "--place-id", str(self.place_id),
-                "--file", self.place_file_path
+                "--file", self.place_file_path,
+                "--api-key", self.api_key
             ]
-            
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            subprocess.run(cmd, capture_output=True, text=True, check=True)
             return True
         except subprocess.CalledProcessError as e:
-            raise Exception(f"Failed to publish place: {e.stderr}")
+            raise Exception(f"Failed to publish place: {e.stderr or e.stdout}")
         except FileNotFoundError:
-            raise Exception("rokit not found. Please install rokit: cargo install rokit")
+            raise Exception("rbxcloud not found. Please install: cargo install rbxcloud")
     
     async def get_place_info(self):
         """Get information about the current place using Roblox API"""
