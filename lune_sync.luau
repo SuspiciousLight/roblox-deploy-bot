@@ -91,6 +91,17 @@ local function syncDirectory(sourceDir: string, parentInstance: Instance)
 				else
 					warn("Failed to read:", entryPath)
 				end
+			elseif base:match("%.json$") then
+				local moduleName = (base:gsub("%.json$", ""))
+				local jsonContent = readTextFile(entryPath)
+				if jsonContent then
+					local moduleScript = ensureModuleScript(parentInstance, moduleName)
+					local luaSource = "return " .. jsonContent
+					moduleScript.Source = luaSource
+					print("Synced JSON module:", moduleName)
+				else
+					warn("Failed to read JSON:", entryPath)
+				end
 			end
 		end
 	end
