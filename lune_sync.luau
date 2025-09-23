@@ -1,82 +1,126 @@
-local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local args = {...}
-local placeFile = args[1] or error("Place file path required")
-local dataDir = args[2] or error("Data directory path required")
+-- Parse flags: --place-file <path> --data-dir <path>
+local placeFile: string? = nil
+local dataDir: string? = nil
 
-local function loadJsonFile(filePath)
-    local success, content = pcall(function()
-        return readfile(filePath)
-    end)
-    
-    if not success then
-        warn("Failed to read file:", filePath)
-        return nil
-    end
-    
-    local success, data = pcall(function()
-        return HttpService:JSONDecode(content)
-    end)
-    
-    if not success then
-        warn("Failed to parse JSON:", filePath)
-        return nil
-    end
-    
-    return data
+local function parseArgs()
+	local argv = {...}
+	local i = 1
+	while i <= #argv do
+		local a = argv[i]
+		if a == "--place-file" then
+			placeFile = argv[i + 1]
+			i += 1
+		elseif a == "--data-dir" then
+			dataDir = argv[i + 1]
+			i += 1
+		end
+		i += 1
+	end
+	assert(placeFile and placeFile ~= "", "--place-file is required")
+	assert(dataDir and dataDir ~= "", "--data-dir is required")
 end
 
-local function syncDataFiles()
-    local dataFilesFolder = ReplicatedStorage:FindFirstChild("DataFiles")
-    if not dataFilesFolder then
-        dataFilesFolder = Instance.new("Folder")
-        dataFilesFolder.Name = "DataFiles"
-        dataFilesFolder.Parent = ReplicatedStorage
-    end
-    
-    local files = listfiles(dataDir)
-    
-    for _, filePath in ipairs(files) do
-        if filePath:match("%.json$") then
-            local fileName = filePath:match("([^/\\]+)$")
-            local data = loadJsonFile(filePath)
-            
-            if data then
-                local stringValue = dataFilesFolder:FindFirstChild(fileName)
-                if not stringValue then
-                    stringValue = Instance.new("StringValue")
-                    stringValue.Name = fileName
-                    stringValue.Parent = dataFilesFolder
-                end
-                
-                stringValue.Value = HttpService:JSONEncode(data)
-                print("Synced data file:", fileName)
-            end
-        end
-    end
+local function readTextFile(filePath: string): string?
+	local ok, content = pcall(function()
+		return readfile(filePath)
+	end)
+	if ok then
+		return content
+	else
+		return nil
+	end
+end
+
+local function ensureFolder(parent: Instance, name: string): Instance
+	local f = parent:FindFirstChild(name)
+	if not f then
+		f = Instance.new("Folder")
+		f.Name = name
+		f.Parent = parent
+	end
+	return f
+end
+
+local function pathJoin(a: string, b: string): string
+	if a:sub(-1):match("[\\/]") then
+		return a .. b
+	else
+		return a .. "/" .. b
+	end
+end
+
+local function getBaseName(filePath: string): string
+	return filePath:match("([^/\\]+)$") or filePath
+end
+
+local function isDirectory(path: string): boolean
+	local ok, entries = pcall(function()
+		return listfiles(path)
+	end)
+	return ok and type(entries) == "table"
+end
+
+local function ensureModuleScript(parent: Instance, name: string): ModuleScript
+	local child = parent:FindFirstChild(name)
+	if not child or not child:IsA("ModuleScript") then
+		if child then child:Destroy() end
+		child = Instance.new("ModuleScript")
+		child.Name = name
+		child.Parent = parent
+	end
+	return child :: ModuleScript
+end
+
+local function syncDirectory(sourceDir: string, parentInstance: Instance)
+	local entries = listfiles(sourceDir)
+	for _, entryPath in ipairs(entries) do
+		local base = getBaseName(entryPath)
+		if isDirectory(entryPath) then
+			local folder = ensureFolder(parentInstance, base)
+			syncDirectory(entryPath, folder)
+		else
+			if base:match("%.lua$") or base:match("%.luau$") then
+				local moduleName = (base:gsub("%.lua[u]?$", ""))
+				local source = readTextFile(entryPath)
+				if source then
+					local moduleScript = ensureModuleScript(parentInstance, moduleName)
+					moduleScript.Source = source
+					print("Synced module:", moduleName)
+				else
+					warn("Failed to read:", entryPath)
+				end
+			end
+		end
+	end
+end
+
+local function syncModuleScripts()
+	local modulesRoot = ensureFolder(ReplicatedStorage, "Modules")
+	local dataFolder = ensureFolder(modulesRoot, "Data")
+	syncDirectory(dataDir :: string, dataFolder)
 end
 
 print("Starting data sync...")
+parseArgs()
 print("Place file:", placeFile)
 print("Data directory:", dataDir)
 
-local success, err = pcall(function()
-    game:Load(placeFile)
+local okLoad, errLoad = pcall(function()
+	game:Load(placeFile :: string)
 end)
-
-if not success then
-    error("Failed to load place file: " .. tostring(err))
+if not okLoad then
+	error("Failed to load place file: " .. tostring(errLoad))
 end
 
-syncDataFiles()
+syncModuleScripts()
 
-local success, err = pcall(function()
-    game:Save(placeFile)
+local okSave, errSave = pcall(function()
+	game:Save(placeFile :: string)
 end)
-
-if not success then
-    error("Failed to save place file: " .. tostring(err))
+if not okSave then
+	error("Failed to save place file: " .. tostring(errSave))
 end
 
 print("Data sync completed successfully!")
