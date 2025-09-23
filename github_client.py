@@ -50,29 +50,38 @@ class GitHubClient:
                     raise Exception(f"Failed to download repository: {response.status}")
     
     async def extract_data_files(self, zip_path, extract_to):
-        """Extract data files from the downloaded repository"""
+        """Extract repository files needed for data sync.
+
+        Returns the extraction root directory (path under which repo content resides).
+        """
         os.makedirs(extract_to, exist_ok=True)
-        
+
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             members = zip_ref.namelist()
             root_dir = members[0] if members else ""
-            
-            data_patterns = ['*.json', '*.lua', '*.luau', '*.txt', '*.csv']
-            
+
+            data_suffixes = ('.json', '.lua', '.luau', '.txt', '.csv')
+
             for member in members:
-                if any(member.endswith(pattern.replace('*', '')) for pattern in data_patterns):
-                    relative_path = member[len(root_dir):] if member.startswith(root_dir) else member
-                    if relative_path: 
-                        zip_ref.extract(member, extract_to)
-                        old_path = os.path.join(extract_to, member)
-                        new_path = os.path.join(extract_to, relative_path)
-                        if old_path != new_path:
-                            os.makedirs(os.path.dirname(new_path), exist_ok=True)
-                            os.rename(old_path, new_path)
-                            try:
-                                os.rmdir(os.path.dirname(old_path))
-                            except OSError:
-                                pass 
+                if member.endswith('/'):
+                    continue
+                if not member.endswith(data_suffixes):
+                    continue
+                relative_path = member[len(root_dir):] if member.startswith(root_dir) else member
+                if not relative_path:
+                    continue
+                zip_ref.extract(member, extract_to)
+                old_path = os.path.join(extract_to, member)
+                new_path = os.path.join(extract_to, relative_path)
+                if old_path != new_path:
+                    os.makedirs(os.path.dirname(new_path), exist_ok=True)
+                    os.rename(old_path, new_path)
+                    try:
+                        os.rmdir(os.path.dirname(old_path))
+                    except OSError:
+                        pass
+
+        return extract_to
     
     async def get_file_contents(self, file_path):
         """Get the contents of a specific file from the repository"""
