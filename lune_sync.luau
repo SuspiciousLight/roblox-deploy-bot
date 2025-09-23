@@ -4,7 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local placeFile: string? = nil
 local dataDir: string? = nil
 
-local function parseArgs()
+local function parseArgs(...)
 	local argv = {...}
 	local i = 1
 	while i <= #argv do
