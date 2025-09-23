@@ -75,8 +75,7 @@ end
 
 local function ensureModuleScript(parent: Instance, name: string): ModuleScript
 	local child = parent:FindFirstChild(name)
-	if not child or not child:IsA("ModuleScript") then
-		if child then child:Destroy() end
+	if not child then
 		child = Instance.new("ModuleScript")
 		child.Name = name
 		child.Parent = parent
