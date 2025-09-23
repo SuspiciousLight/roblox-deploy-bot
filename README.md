@@ -4,12 +4,13 @@ A Discord bot that automates syncing GitHub changes to your Roblox game. This bo
 
 ## Features
 
-- 🤖 Discord slash command (`/sync`)
-- 🔄 Automatic GitHub repository syncing (with optional branch parameter)
-- 🎮 Download/publish Roblox place via rbxcloud (Open Cloud)
-- 📊 Sync data files via Lune
-- 🔐 Role-based permissions (optional)
-- 📝 Step-by-step messaging and logging
+- 🤖 One-command deploy via Discord (`/sync`)
+- 🔄 Pulls latest changes from GitHub (optional branch override)
+- 📥 Downloads current place (.rbxl) via Roblox Open Cloud (`rbxcloud`)
+- 📊 Applies data changes with Lune (headless, no Studio)
+- 🚀 Publishes updated place back to Roblox (`rbxcloud`)
+- 🔐 Optional allowlist for users/roles
+- 📝 Step-by-step status messages and logging
 
 ## Prerequisites
 
@@ -50,6 +51,7 @@ A Discord bot that automates syncing GitHub changes to your Roblox game. This bo
    - Copy the token to your `.env` file
 
 6. **Install CLI tools:**
+
    - Install rbxcloud: `cargo install rbxcloud`
    - Install Lune: `cargo install lune`
    - Restart the terminal and make sure both are in PATH
@@ -94,6 +96,13 @@ ALLOWED_USERS=user_id_1,user_id_2
    - `/sync` — deploy the default branch (`GITHUB_BRANCH`)
    - `/sync branch:<name>` — deploy a specific branch
 
+Data path detection used by the bot:
+
+- The bot automatically targets data modules at one of these paths inside your repo ZIP:
+  - `AV Balancing/src/ReplicatedStorage/Modules/Data`
+  - `src/ReplicatedStorage/Modules/Data`
+    If your repo differs, align it to one of the above so Lune can mirror modules into `ReplicatedStorage/Modules/Data` inside the place file.
+
 ## Restart & Testing
 
 Restarting the bot:
@@ -117,9 +126,9 @@ Syncs the latest changes from your GitHub repository to Roblox:
 
 1. Fetches latest commit from GitHub
 2. Downloads the repository
-3. Extracts data files
+3. Locates data root (see "Data path detection")
 4. Downloads current place file from Roblox using rbxcloud
-5. Syncs data files using Lune
+5. Syncs data files using Lune (mirrors into `ReplicatedStorage/Modules/Data`)
 6. Publishes the updated place to Roblox using rbxcloud
 
 ## File Structure
@@ -131,7 +140,7 @@ roblox-deploy-bot/
 ├── github_client.py        # GitHub API client
 ├── roblox_client.py        # Roblox operations client (using rbxcloud)
 ├── config.py              # Configuration management
-├── lune_sync.luau         # Lune script for data syncing
+├── lune_sync.luau         # Lune script (recursive mirror to ReplicatedStorage/Modules/Data)
 ├── setup.py               # Setup script
 ├── requirements.txt       # Python dependencies
 ├── env_example.txt        # Environment variables example
@@ -167,7 +176,9 @@ ALLOWED_ROLES=discord_role_id_1
 
    - Make sure Lune is installed and in your PATH
    - Check that the Lune script path is correct
-   - Verify your data files are in the correct format
+   - Ensure your repo contains one of the supported data roots:
+     - `AV Balancing/src/ReplicatedStorage/Modules/Data`
+     - `src/ReplicatedStorage/Modules/Data`
 
 4. **"Failed to publish place"**
    - Ensure `rbxcloud` is in PATH
