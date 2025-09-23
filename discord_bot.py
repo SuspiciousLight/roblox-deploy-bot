@@ -9,7 +9,6 @@ from github_client import GitHubClient
 from roblox_client import RobloxClient
 from discord import app_commands
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class SyncBot(commands.Bot):
