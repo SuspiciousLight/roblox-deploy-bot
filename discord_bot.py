@@ -109,7 +109,19 @@ async def sync_command_handler(interaction: discord.Interaction, branch: Optiona
         await bot.github_client.download_repository(zip_path, branch)
         
         await update_status("📂 Extracting data files...")
-        await bot.github_client.extract_data_files(zip_path, Config.DATA_FILES_DIR)
+        repo_root = await bot.github_client.extract_data_files(zip_path, Config.DATA_FILES_DIR)
+
+        # Point Lune to the Rojo data root inside the repo
+        data_root = os.path.join(repo_root, 'AV Balancing', 'src', 'ReplicatedStorage', 'Modules', 'Data')
+        if os.path.exists(data_root):
+            bot.roblox_client.data_files_dir = data_root
+        else:
+            # Fallback: try monorepo-less structure
+            alt_root = os.path.join(repo_root, 'src', 'ReplicatedStorage', 'Modules', 'Data')
+            if os.path.exists(alt_root):
+                bot.roblox_client.data_files_dir = alt_root
+            else:
+                raise Exception(f"Data directory not found. Tried: {data_root} and {alt_root}")
         
         await update_status("🎮 Downloading current place file...")
         await bot.roblox_client.download_place_file()
