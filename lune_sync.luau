@@ -55,6 +55,17 @@ local function getBaseName(filePath: string): string
 	return filePath:match("([^/\\]+)$") or filePath
 end
 
+local function sanitizeModuleName(name: string): string
+	local cleanName = name:gsub("%.json$", ""):gsub("%.lua$", ""):gsub("%.luau$", "")
+	cleanName = cleanName:gsub("[%s%-%+%*%?%[%]%(%)%{%}%|%\\%/%:%;%\"%'%<%>%,%.%!%@%#%$%%%^%&%*]", "_")
+	cleanName = cleanName:gsub("_+", "_")
+	cleanName = cleanName:gsub("^_+", ""):gsub("_+$", "")
+	if cleanName == "" then
+		cleanName = "Module"
+	end
+	return cleanName
+end
+
 local function isDirectory(path: string): boolean
 	local ok, entries = pcall(function()
 		return listfiles(path)
@@ -82,23 +93,23 @@ local function syncDirectory(sourceDir: string, parentInstance: Instance)
 			syncDirectory(entryPath, folder)
 		else
 			if base:match("%.lua$") or base:match("%.luau$") then
-				local moduleName = (base:gsub("%.lua[u]?$", ""))
+				local moduleName = sanitizeModuleName(base)
 				local source = readTextFile(entryPath)
 				if source then
 					local moduleScript = ensureModuleScript(parentInstance, moduleName)
 					moduleScript.Source = source
-					print("Synced module:", moduleName)
+					print("Synced module:", moduleName, "from", base)
 				else
 					warn("Failed to read:", entryPath)
 				end
 			elseif base:match("%.json$") then
-				local moduleName = (base:gsub("%.json$", ""))
+				local moduleName = sanitizeModuleName(base)
 				local jsonContent = readTextFile(entryPath)
 				if jsonContent then
 					local moduleScript = ensureModuleScript(parentInstance, moduleName)
 					local luaSource = "return " .. jsonContent
 					moduleScript.Source = luaSource
-					print("Synced JSON module:", moduleName)
+					print("Synced JSON module:", moduleName, "from", base)
 				else
 					warn("Failed to read JSON:", entryPath)
 				end
